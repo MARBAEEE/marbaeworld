@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARBAE WORLD • Smart Layout PDF to Word (v4.0)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Pustaka PDF.js, docx.js, dan Tesseract.js OCR (100% Client-Side) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#FDFCF8] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-amber-200 selection:text-slate-900">
+
+    <!-- Header -->
+    <header class="w-full border-b border-amber-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+                <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-sm tracking-tight shadow-sm">
+                    MW
+                </span>
+                <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">
+                    MARBAE <span class="text-amber-500">WORLD</span>
+                </span>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-800 text-xs font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Smart Layout OCR • v4.0
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-16 flex flex-col justify-center">
+        <div class="text-center mb-8 sm:mb-10">
+            <span class="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold tracking-wider uppercase mb-3">
+                Smart Layout Reconstruction
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+                Konversi PDF ke Word Rapi
+            </h1>
+            <p class="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+                Membaca teks sekaligus mempertahankan posisi <strong>rata tengah</strong>, <strong>paragraf menjorok</strong>, dan <strong>spasi baris</strong> ke dalam file Word (<code class="font-semibold text-slate-800">.docx</code>) secara lokal.
+            </p>
+        </div>
+
+        <!-- Card Upload & Proses -->
+        <div class="bg-white rounded-3xl border border-amber-200/80 shadow-xl shadow-amber-900/5 p-6 sm:p-10">
+            
+            <!-- 1. Area Pilih File -->
+            <div id="dropzone" class="border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/40 hover:bg-amber-50/80 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all">
+                <input type="file" id="file-input" accept="application/pdf,.pdf" class="hidden">
+                <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-400/20 text-amber-600 flex items-center justify-center">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <p class="text-base sm:text-lg font-bold text-slate-900 mb-1">
+                    Klik untuk memilih file PDF
+                </p>
+                <p class="text-xs sm:text-sm text-slate-500">
+                    atau seret &amp; jatuhkan (drag &amp; drop) file PDF di sini
+                </p>
+            </div>
+
+            <!-- 2. Area File Terpilih -->
+            <div id="file-ready-box" class="hidden border-2 border-dashed border-amber-300 bg-amber-50/30 rounded-2xl p-6 sm:p-8 text-center">
+                <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-sm mb-2">
+                    <svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span id="file-name" class="font-bold text-sm sm:text-base text-slate-900 break-all">dokumen.pdf</span>
+                </div>
+                <p id="file-size" class="text-xs text-slate-500 mb-6">0 MB</p>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-3">
+                    <button id="convert-btn" class="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-sm sm:text-base shadow-sm transition cursor-pointer">
+                        Konversi dengan Smart Layout
+                    </button>
+                    <button id="cancel-btn" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm sm:text-base transition cursor-pointer">
+                        Batal
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Area Loading & Progress Bar -->
+            <div id="loading-box" class="hidden py-8 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
+                <p id="progress-text" class="text-base font-bold text-slate-900 mb-2">
+                    Menganalisis tata letak dokumen...
+                </p>
+                <div class="w-full max-w-md mx-auto bg-slate-100 rounded-full h-2.5 mb-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-200" style="width: 5%"></div>
+                </div>
+                <p id="progress-sub" class="text-xs text-slate-500">
+                    Mendeteksi margin, posisi tengah, dan indentasi paragraf secara lokal.
+                </p>
+            </div>
+
+            <!-- 4. Area Hasil Selesai -->
+            <div id="success-box" class="hidden py-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <p class="text-base sm:text-lg font-bold text-slate-900 mb-1">Konversi Rapi Berhasil!</p>
+                <p id="success-detail" class="text-xs sm:text-sm text-slate-500 mb-6">File Word siap diunduh.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-3">
+                    <button id="download-again-btn" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition cursor-pointer">
+                        Unduh Ulang (.docx)
+                    </button>
+                    <button id="reset-btn" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition cursor-pointer">
+                        Konversi File Lain
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Pesan Error -->
+            <div id="error-box" class="hidden mt-5 p-4 rounded-xl bg-red-50 border border-red-200 text-center">
+                <p id="error-message" class="text-xs sm:text-sm font-semibold text-red-600"></p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-6 px-4 text-center text-xs text-slate-500 border-t border-amber-200/50">
+        &copy; 2026 MARBAE WORLD • Berjalan 100% secara lokal di perangkat Anda
+    </footer>
+
+    <!-- Script Smart Layout OCR PDF-to-Word -->
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileReadyBox = document.getElementById('file-ready-box');
+        const loadingBox = document.getElementById('loading-box');
+        const successBox = document.getElementById('success-box');
+        const errorBox = document.getElementById('error-box');
+
+        const fileNameEl = document.getElementById('file-name');
+        const fileSizeEl = document.getElementById('file-size');
+        const progressTextEl = document.getElementById('progress-text');
+        const progressBarEl = document.getElementById('progress-bar');
+        const progressSubEl = document.getElementById('progress-sub');
+        const successDetailEl = document.getElementById('success-detail');
+        const errorMessageEl = document.getElementById('error-message');
+
+        const convertBtn = document.getElementById('convert-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const downloadAgainBtn = document.getElementById('download-again-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let selectedFile = null;
+        let generatedBlob = null;
+        let outputFileName = 'hasil-rapi.docx';
+
+        function showError(msg) {
+            errorMessageEl.textContent = msg;
+            errorBox.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorBox.classList.add('hidden');
+        }
+
+        function resetUI() {
+            selectedFile = null;
+            generatedBlob = null;
+            fileInput.value = '';
+            hideError();
+            dropzone.classList.remove('hidden');
+            fileReadyBox.classList.add('hidden');
+            loadingBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+        }
+
+        function handleFileSelect(file) {
+            hideError();
+            if (!file) return;
+
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                showError('Format file tidak didukung. Harap pilih file berformat PDF (.pdf).');
+                return;
+            }
+
+            selectedFile = file;
+            fileNameEl.textContent = file.name;
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            fileSizeEl.textContent = `Ukuran file: ${sizeMB} MB (Smart Layout OCR v4.0)`;
+            outputFileName = file.name.replace(/\.pdf$/i, '') + '_RAPI.docx';
+
+            dropzone.classList.add('hidden');
+            fileReadyBox.classList.remove('hidden');
+            successBox.classList.add('hidden');
+        }
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-amber-500', 'bg-amber-100/60');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-amber-500', 'bg-amber-100/60');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-amber-500', 'bg-amber-100/60');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        cancelBtn.addEventListener('click', resetUI);
+        resetBtn.addEventListener('click', resetUI);
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }
+
+        downloadAgainBtn.addEventListener('click', () => {
+            if (generatedBlob) {
+                triggerDownload(generatedBlob, outputFileName);
+            }
+        });
+
+        async function renderPageToCanvas(page, scale = 2.0) {
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            return { canvas, width: viewport.width, height: viewport.height };
+        }
+
+        // Helper: Rekonstruksi baris menjadi Paragraf Word dengan Alignment, Indent, & Bold
+        function buildFormattedParagraphs(linesData, pageWidth, Paragraph, TextRun, AlignmentType) {
+            const paragraphs = [];
+            if (!linesData || linesData.length === 0) return paragraphs;
+
+            // 1. Cari margin kiri dasar halaman (persentil ke-15 dari x0 agar tidak terkecoh nomor/judul)
+            const sortedX0 = linesData.map(l => l.x0).sort((a, b) => a - b);
+            const baseLeftMargin = sortedX0[Math.floor(sortedX0.length * 0.15)] || (pageWidth * 0.1);
+
+            // 2. Cari tinggi huruf rata-rata halaman untuk mendeteksi judul/heading
+            const heights = linesData.map(l => l.height).filter(h => h > 0).sort((a, b) => a - b);
+            const medianHeight = heights[Math.floor(heights.length * 0.5)] || 20;
+
+            // Lebar area konten Word (A4 standar dengan margin 1 inci ~ 9360 twips)
+            const wordContentTwips = 9360;
+            const printablePageWidth = Math.max(pageWidth - (baseLeftMargin * 2), pageWidth * 0.6);
+
+            let prevY1 = null;
+
+            linesData.forEach((line, idx) => {
+                const cleanText = line.text.replace(/\s+/g, ' ').trim();
+                if (!cleanText) return;
+
+                const lineWidth = line.x1 - line.x0;
+                const lineCenter = (line.x0 + line.x1) / 2;
+                const pageCenter = pageWidth / 2;
+
+                // Cek apakah baris berada di tengah halaman (Center Aligned)
+                const isCentered =
+                    Math.abs(lineCenter - pageCenter) < (pageWidth * 0.045) &&
+                    lineWidth < (pageWidth * 0.72) &&
+                    line.x0 > (baseLeftMargin + pageWidth * 0.06);
+
+                // Cek apakah baris rata kanan (misal tanggal surat di pojok kanan)
+                const isRightAligned =
+                    !isCentered &&
+                    line.x0 > (pageWidth * 0.52) &&
+                    (pageWidth - line.x1) < (pageWidth * 0.18);
+
+                // Hitung seberapa menjorok ke dalam (indentasi kiri)
+                let leftIndentTwips = 0;
+                if (!isCentered && !isRightAligned) {
+                    const indentPx = Math.max(0, line.x0 - baseLeftMargin);
+                    // Hanya terapkan indentasi jika bergeser signifikan (> 2.5% lebar halaman)
+                    if (indentPx > pageWidth * 0.025) {
+                        leftIndentTwips = Math.min(
+                            Math.round((indentPx / printablePageWidth) * wordContentTwips),
+                            5500
+                        );
+                    }
+                }
+
+                // Cek jarak vertikal dari baris sebelumnya untuk menentukan spasi paragraf
+                let spaceBeforeTwips = 0;
+                if (prevY1 !== null) {
+                    const gapY = line.y0 - prevY1;
+                    if (gapY > medianHeight * 0.85) {
+                        spaceBeforeTwips = Math.min(Math.round((gapY / medianHeight) * 140), 480);
+                    }
+                }
+                prevY1 = line.y1;
+
+                // Deteksi apakah baris ini judul / subjudul (huruf lebih tinggi atau huruf kapital pendek di tengah)
+                const isLargerFont = line.height > medianHeight * 1.22;
+                const isAllCapsHeading =
+                    cleanText.length >= 4 &&
+                    cleanText.length <= 75 &&
+                    cleanText === cleanText.toUpperCase() &&
+                    /[A-Z]/.test(cleanText) &&
+                    (isCentered || idx < 6);
+
+                const isBold = isLargerFont || isAllCapsHeading;
+                const fontSizeHalfPt = isLargerFont ? 26 : 22; // 13pt untuk judul, 11pt untuk isi
+
+                let alignment = AlignmentType.LEFT;
+                if (isCentered) alignment = AlignmentType.CENTER;
+                else if (isRightAligned) alignment = AlignmentType.RIGHT;
+
+                paragraphs.push(
+                    new Paragraph({
+                        alignment: alignment,
+                        indent: leftIndentTwips > 0 ? { left: leftIndentTwips } : undefined,
+                        spacing: {
+                            before: spaceBeforeTwips,
+                            after: 80,
+                            line: 276 // Spasi 1.15 yang rapi untuk dokumen resmi
+                        },
+                        children: [
+                            new TextRun({
+                                text: cleanText,
+                                bold: isBold,
+                                font: 'Times New Roman',
+                                size: fontSizeHalfPt
+                            })
+                        ]
+                    })
+                );
+            });
+
+            return paragraphs;
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            hideError();
+            fileReadyBox.classList.add('hidden');
+            loadingBox.classList.remove('hidden');
+            progressBarEl.style.width = '5%';
+
+            let ocrWorker = null;
+
+            try {
+                const fileUrl = URL.createObjectURL(selectedFile);
+                const pdf = await pdfjsLib.getDocument({
+                    url: fileUrl,
+                    disableAutoFetch: true,
+                    disableStream: false
+                }).promise;
+
+                const totalPages = pdf.numPages;
+                const { Document, Packer, Paragraph, TextRun, AlignmentType, PageBreak } = window.docx;
+                const docChildren = [];
+
+                let textPageCount = 0;
+                let ocrPageCount = 0;
+
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    const basePercent = Math.round(((pageNum - 1) / totalPages) * 90) + 5;
+                    progressBarEl.style.width = `${basePercent}%`;
+                    progressTextEl.textContent = `Menganalisis halaman ${pageNum} dari ${totalPages}...`;
+
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const textContent = await page.getTextContent();
+
+                    const linesMap = new Map();
+                    let pageCharCount = 0;
+
+                    textContent.items.forEach(item => {
+                        if (!item.str || item.str.trim() === '') return;
+                        pageCharCount += item.str.trim().length;
+                        // Konversi koordinat Y PDF (dari bawah ke atas) menjadi dari atas ke bawah
+                        const topY = viewport.height - item.transform[5];
+                        const yKey = Math.round(topY / 4) * 4;
+                        if (!linesMap.has(yKey)) linesMap.set(yKey, []);
+                        linesMap.get(yKey).push({
+                            x0: item.transform[4],
+                            x1: item.transform[4] + (item.width || item.str.length * 5),
+                            y0: topY - (item.height || 10),
+                            y1: topY,
+                            height: item.height || 10,
+                            text: item.str
+                        });
+                    });
+
+                    // Jalur 1: PDF Digital Asli dengan Koordinat Layout
+                    if (pageCharCount > 20) {
+                        textPageCount++;
+                        progressSubEl.textContent = `Halaman ${pageNum}: Merekonstruksi tata letak teks digital...`;
+                        const sortedY = Array.from(linesMap.keys()).sort((a, b) => a - b);
+
+                        const linesData = sortedY.map(y => {
+                            const items = linesMap.get(y).sort((a, b) => a.x0 - b.x0);
+                            return {
+                                text: items.map(i => i.text).join(' '),
+                                x0: items[0].x0,
+                                x1: items[items.length - 1].x1,
+                                y0: items[0].y0,
+                                y1: items[0].y1,
+                                height: Math.max(...items.map(i => i.height))
+                            };
+                        });
+
+                        const formatted = buildFormattedParagraphs(linesData, viewport.width, Paragraph, TextRun, AlignmentType);
+                        docChildren.push(...formatted);
+                    } 
+                    // Jalur 2: PDF Scan Gambar -> OCR dengan Bounding Box (Koordinat Baris)
+                    else {
+                        ocrPageCount++;
+                        if (!ocrWorker) {
+                            progressSubEl.textContent = 'Memuat kamus OCR Bahasa Indonesia & Inggris...';
+                            ocrWorker = await Tesseract.createWorker(['ind', 'eng'], 1, {
+                                logger: m => {
+                                    if (m.status === 'recognizing text') {
+                                        const pct = Math.round(m.progress * 100);
+                                        progressSubEl.textContent = `Halaman ${pageNum}/${totalPages}: Membaca tata letak & huruf (${pct}%)...`;
+                                    }
+                                }
+                            });
+                        }
+
+                        const { canvas, width } = await renderPageToCanvas(page, 2.0);
+                        const result = await ocrWorker.recognize(canvas);
+
+                        canvas.width = 0;
+                        canvas.height = 0;
+
+                        const ocrLines = (result.data.lines || [])
+                            .filter(l => l.text && l.text.trim().length > 0 && l.confidence > 25)
+                            .map(l => ({
+                                text: l.text.trim(),
+                                x0: l.bbox.x0,
+                                x1: l.bbox.x1,
+                                y0: l.bbox.y0,
+                                y1: l.bbox.y1,
+                                height: l.bbox.y1 - l.bbox.y0
+                            }));
+
+                        if (ocrLines.length > 0) {
+                            const formatted = buildFormattedParagraphs(ocrLines, width, Paragraph, TextRun, AlignmentType);
+                            docChildren.push(...formatted);
+                        } else {
+                            docChildren.push(
+                                new Paragraph({
+                                    children: [new TextRun({ text: `[Halaman ${pageNum}: Tidak ditemukan teks terbaca]`, italics: true, color: '888888' })]
+                                })
+                            );
+                        }
+                    }
+
+                    if (pageNum < totalPages) {
+                        docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+                    }
+
+                    page.cleanup();
+                    await new Promise(r => setTimeout(r, 10));
+                }
+
+                if (ocrWorker) {
+                    await ocrWorker.terminate();
+                }
+                URL.revokeObjectURL(fileUrl);
+
+                progressBarEl.style.width = '96%';
+                progressTextEl.textContent = 'Menyusun dokumen Word terformat (.docx)...';
+                progressSubEl.textContent = 'Hampir selesai...';
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {
+                            page: {
+                                margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // Margin standar 1 inci (2.54 cm)
+                            }
+                        },
+                        children: docChildren
+                    }]
+                });
+
+                generatedBlob = await Packer.toBlob(doc);
+                progressBarEl.style.width = '100%';
+
+                triggerDownload(generatedBlob, outputFileName);
+
+                loadingBox.classList.add('hidden');
+                successDetailEl.textContent = `Selesai! ${totalPages} halaman direkonstruksi rapi (${textPageCount} teks asli, ${ocrPageCount} Smart OCR) -> ${outputFileName}`;
+                successBox.classList.remove('hidden');
+
+            } catch (err) {
+                if (ocrWorker) {
+                    try { await ocrWorker.terminate(); } catch (_) {}
+                }
+                console.error(err);
+                loadingBox.classList.add('hidden');
+                fileReadyBox.classList.remove('hidden');
+                showError('Gagal memproses tata letak: ' + (err.message || 'Pastikan koneksi internet stabil saat memuat kamus OCR.'));
+            }
+        });
+    </script>
+
+</body>
+</html>
